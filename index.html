@@ -1,0 +1,453 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#111111">
+  <title>Audio Player</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 32px 18px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #111111;
+      color: #f5f5f5;
+      font-family: -apple-system, BlinkMacSystemFont,
+        "Helvetica Neue", sans-serif;
+    }
+
+    .player {
+      width: 100%;
+      max-width: 300px;
+    }
+
+    .cover {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      display: block;
+      object-fit: cover;
+      border-radius: 8px;
+      background: #292929;
+      margin-bottom: 28px;
+    }
+
+    .eyebrow {
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: #999999;
+      margin-bottom: 8px;
+         margin-top: 8px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 500;
+      margin: 0 0 8px;
+      overflow-wrap: anywhere;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #a0a0a0;
+      margin-bottom: 28px;
+         letter-spacing: 1.5px;
+    }
+
+    .track-list {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 26px;
+    }
+
+    .track {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 15px 10px;
+      color: #bdbdbd;
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid #333333;
+      text-align: left;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .track:first-child {
+      border-top: 1px solid #333333;
+    }
+
+    .track.active {
+      color: #ffffff;
+    }
+
+    .track-number {
+      width: 24px;
+      color: #888888;
+      font-size: 13px;
+    }
+
+    .track-name {
+      flex: 1;
+      font-size: 14px;
+    }
+
+    .track-status {
+      font-size: 11px;
+      color: #b5b5b5;
+    }
+
+    .progress-area {
+      margin-top: 10px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: #ffffff;
+      cursor: pointer;
+    }
+
+    .time-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #999999;
+      margin-top: 6px;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 28px;
+      margin: 26px 0 20px;
+    }
+
+    .control-btn {
+      color: #ffffff;
+      border: 0;
+      background: transparent;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 10px;
+      min-width: 44px;
+      min-height: 44px;
+    }
+
+    .control-btn.play {
+      width: 62px;
+      height: 62px;
+      border-radius: 50%;
+      background: #ffffff;
+      color: #111111;
+      font-size: 24px;
+    }
+
+    .volume-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 14px;
+      color: #aaaaaa;
+      font-size: 12px;
+    }
+
+    .volume-row input {
+      flex: 1;
+    }
+
+    .message {
+      min-height: 20px;
+      margin-top: 16px;
+      text-align: center;
+      color: #b7b7b7;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    button:focus-visible,
+    input:focus-visible {
+      outline: 2px solid #ffffff;
+      outline-offset: 4px;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="player">
+    <img
+      class="cover"
+      src="image/cover.png"
+      alt="封面"
+    >
+
+    <div class="eyebrow">REVERBERATION SOUND COLLECTION Vol. 1</div>
+    <h1>共 振 計 畫：聲 音 播 放</h1>
+    <div class="subtitle">Lai Chi-hsia | One Litre Sound</div>
+
+    <div class="track-list" id="trackList"></div>
+
+    <audio id="audio" preload="metadata" playsinline></audio>
+
+    <div class="progress-area">
+      <input
+        id="progress"
+        type="range"
+        min="0"
+        max="1000"
+        value="0"
+        aria-label="播放進度"
+      >
+
+      <div class="time-row">
+        <span id="currentTime">0:00</span>
+        <span id="duration">0:00</span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button
+        class="control-btn"
+        id="prevBtn"
+        type="button"
+        aria-label="上一首"
+      >⏮</button>
+
+      <button
+        class="control-btn play"
+        id="playBtn"
+        type="button"
+        aria-label="播放"
+      >▶</button>
+
+      <button
+        class="control-btn"
+        id="nextBtn"
+        type="button"
+        aria-label="下一首"
+      >⏭</button>
+    </div>
+
+    <div class="volume-row">
+      <span>VOL</span>
+      <input
+        id="volume"
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        value="0.8"
+        aria-label="音量"
+      >
+    </div>
+
+    <div
+      class="message"
+      id="message"
+      aria-live="polite"
+    >正在準備音樂……</div>
+  </main>
+
+  <script>
+    const tracks = [
+      {
+        title: "Track 1 ",
+        src: "audio/track-01.mp3"
+      },
+      {
+        title: "Track 2 ",
+        src: "audio/track-02.mp3"
+      },
+      {
+        title: "Track 3",
+        src: "audio/track-03.mp3"
+      }
+    ];
+
+    const audio = document.getElementById("audio");
+    const trackList = document.getElementById("trackList");
+    const playBtn = document.getElementById("playBtn");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const progress = document.getElementById("progress");
+    const currentTimeEl = document.getElementById("currentTime");
+    const durationEl = document.getElementById("duration");
+    const volume = document.getElementById("volume");
+    const message = document.getElementById("message");
+
+    let currentTrack = 0;
+
+    function formatTime(seconds) {
+      if (!Number.isFinite(seconds)) return "0:00";
+
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+
+      return mins + ":" + String(secs).padStart(2, "0");
+    }
+
+    function renderTracks() {
+      trackList.innerHTML = "";
+
+      tracks.forEach((track, index) => {
+        const button = document.createElement("button");
+        button.className = "track";
+        button.type = "button";
+
+        button.innerHTML = `
+          <span class="track-number">
+            ${String(index + 1).padStart(2, "0")}
+          </span>
+          <span class="track-name"></span>
+          <span class="track-status"></span>
+        `;
+
+        button.querySelector(".track-name").textContent = track.title;
+
+        button.addEventListener("click", () => {
+          loadTrack(index, true);
+        });
+
+        trackList.appendChild(button);
+      });
+
+      updateTrackList();
+    }
+
+    function updateTrackList() {
+      [...trackList.children].forEach((button, index) => {
+        button.classList.toggle("active", index === currentTrack);
+
+        button.querySelector(".track-status").textContent =
+          index === currentTrack && !audio.paused
+            ? "PLAYING"
+            : "";
+      });
+    }
+
+    function updatePlayButton() {
+      playBtn.textContent = audio.paused ? "▶" : "Ⅱ";
+
+      playBtn.setAttribute(
+        "aria-label",
+        audio.paused ? "播放" : "暫停"
+      );
+
+      updateTrackList();
+    }
+
+    async function playAudio() {
+      try {
+        await audio.play();
+        message.textContent = "正在播放";
+      } catch (error) {
+        message.textContent = "請點擊播放鍵開始聆聽";
+        console.log("自動播放或播放操作未成功：", error.name);
+      }
+
+      updatePlayButton();
+    }
+
+    function loadTrack(index, shouldPlay = false) {
+      currentTrack = (index + tracks.length) % tracks.length;
+
+      audio.src = tracks[currentTrack].src;
+      audio.load();
+
+      progress.value = 0;
+      currentTimeEl.textContent = "0:00";
+      durationEl.textContent = "0:00";
+
+      updateTrackList();
+
+      if (shouldPlay) {
+        playAudio();
+      } else {
+        message.textContent = "請按播放鍵開始聆聽";
+      }
+    }
+
+    playBtn.addEventListener("click", () => {
+      if (audio.paused) {
+        playAudio();
+      } else {
+        audio.pause();
+      }
+    });
+
+    prevBtn.addEventListener("click", () => {
+      loadTrack(currentTrack - 1, true);
+    });
+
+    nextBtn.addEventListener("click", () => {
+      loadTrack(currentTrack + 1, true);
+    });
+
+    audio.addEventListener("play", updatePlayButton);
+    audio.addEventListener("pause", updatePlayButton);
+
+    audio.addEventListener("loadedmetadata", () => {
+      durationEl.textContent = formatTime(audio.duration);
+    });
+
+    audio.addEventListener("timeupdate", () => {
+      currentTimeEl.textContent = formatTime(audio.currentTime);
+
+      if (Number.isFinite(audio.duration) && audio.duration > 0) {
+        progress.value =
+          (audio.currentTime / audio.duration) * 1000;
+      }
+    });
+
+    progress.addEventListener("input", () => {
+      if (Number.isFinite(audio.duration) && audio.duration > 0) {
+        audio.currentTime =
+          (Number(progress.value) / 1000) * audio.duration;
+      }
+    });
+
+    volume.addEventListener("input", () => {
+      audio.volume = Number(volume.value);
+    });
+
+    audio.addEventListener("ended", () => {
+      if (currentTrack < tracks.length - 1) {
+        loadTrack(currentTrack + 1, true);
+      } else {
+        audio.pause();
+        audio.currentTime = 0;
+        progress.value = 0;
+        currentTimeEl.textContent = "0:00";
+
+        updatePlayButton();
+        updateTrackList();
+
+        message.textContent = "播放完畢，謝謝聆聽";
+      }
+    });
+
+    audio.addEventListener("error", () => {
+      message.textContent =
+        "音檔載入失敗，請確認 audio 資料夾與檔名";
+    });
+
+    // 初始化播放器
+    renderTracks();
+    audio.volume = Number(volume.value);
+
+    // 載入第一首並嘗試自動播放
+    loadTrack(0, true);
+  </script>
+</body>
+</html>
